@@ -9,7 +9,7 @@ namespace SimpleDream.Radio;
 /// <summary>
 /// TCI client. SimpleDream only listens: the one way out is <see cref="Send"/>, and it
 /// refuses every command that isn't on the receive-only list below, so nothing here can
-/// key or tune a transmitter.
+/// transmit.
 /// </summary>
 public sealed class TciClient : IDisposable
 {

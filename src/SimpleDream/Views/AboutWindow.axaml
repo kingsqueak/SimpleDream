@@ -7,6 +7,6 @@
     <TextBlock TextWrapping="Wrap" Text="A simple receiver for Digital Radio Mondiale over TCI." />
     <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
                Text="Decoding by DecDRM (Rust, GPL-2.0-or-later). Audio by FDK-AAC and Opus. Schedules from EiBi and the DRMDX group." />
-    <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Text="Receive only: it can't key or tune a transmitter." />
+    <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Text="Receive only: it can't transmit." />
   </StackPanel>
 </Window>
