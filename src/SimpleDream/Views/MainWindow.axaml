@@ -1,0 +1,152 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleDream.ViewModels"
+        xmlns:c="using:SimpleDream.Controls"
+        x:Class="SimpleDream.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="SimpleDream" Width="1000" Height="680" MinWidth="760" MinHeight="520">
+
+  <Window.Styles>
+    <Style Selector="Slider:horizontal">
+      <Setter Property="Margin" Value="0,-14" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <NativeMenuBar Name="MenuBar" DockPanel.Dock="Top" />
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12">
+
+      <!-- Top: connection, frequency, signal -->
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,10">
+        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Button Classes="flat" Content="{Binding ConnectionLabel}" Click="OnConfig" ToolTip.Tip="Configuration" />
+            <Button Classes="flat" Content="Config" Click="OnConfig" ToolTip.Tip="Configuration" />
+            <Button Classes="flat" Content="Broadcasts" Click="OnBroadcasts" ToolTip.Tip="What's on the air" />
+          </StackPanel>
+          <TextBlock Text="{Binding ConnectionDetail}" Classes="label" Margin="2,0,0,0" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+          <Panel MinWidth="230" Background="Transparent" PointerWheelChanged="OnFrequencyWheel" PointerPressed="OnFrequencyPressed"
+                 ToolTip.Tip="Scroll to tune, or click to type a frequency">
+            <TextBlock Name="FrequencyText" FontFamily="{StaticResource MonoFont}" FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
+              <Run Text="{Binding FreqHead}" /><Run Text="{Binding FreqTail}" Foreground="{DynamicResource StepDigit}" />
+            </TextBlock>
+            <TextBox Name="FrequencyEntry" IsVisible="False" FontFamily="{StaticResource MonoFont}" FontSize="30" Width="230"
+                     VerticalAlignment="Center" KeyDown="OnFrequencyKey" LostFocus="OnFrequencyLostFocus" />
+          </Panel>
+          <TextBlock Text="Hz" Classes="label" FontSize="18" VerticalAlignment="Center" />
+          <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="Step" Classes="label" HorizontalAlignment="Center" />
+            <Button Classes="seg" Margin="0" Content="{Binding StepLabel}">
+              <Button.Flyout>
+                <MenuFlyout>
+                  <MenuItem Header="1 kHz" Command="{Binding PickStepCommand}" CommandParameter="1000" />
+                  <MenuItem Header="5 kHz" Command="{Binding PickStepCommand}" CommandParameter="5000" />
+                  <MenuItem Header="10 kHz" Command="{Binding PickStepCommand}" CommandParameter="10000" />
+                </MenuFlyout>
+              </Button.Flyout>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Column="2" Classes="panel" Width="300">
+          <StackPanel Spacing="6">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding SnrText}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" />
+            </Grid>
+            <c:SnrBar Height="8" Value="{Binding Snr}" Needs="{Binding NeedsSnr}" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding StatusDetail}" Classes="label" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="1" Text="{Binding QualityText}" Classes="label" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- The station -->
+      <Border Grid.Row="1" Classes="panel" Margin="0,0,0,10" Padding="14,10">
+        <StackPanel Spacing="3">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding Station}" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MinHeight="30" />
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Services}" IsVisible="{Binding HasManyServices}" VerticalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ServiceItem">
+                  <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}" Command="{Binding SelectCommand}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Grid>
+          <TextBlock Text="{Binding StationDetail}" FontSize="13" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding StationDetail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding Technical}" Classes="label" IsVisible="{Binding Technical, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding TextMessage}" IsVisible="{Binding HasTextMessage}" FontSize="13" TextWrapping="Wrap" MaxLines="2" Margin="0,4,0,0" />
+        </StackPanel>
+      </Border>
+
+      <!-- The channel, and pictures or news when the station sends them -->
+      <Grid Grid.Row="2" Name="MiddleGrid" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+        <Border CornerRadius="8" ClipToBounds="True">
+          <c:ChannelView />
+        </Border>
+        <Border Grid.Column="1" Classes="panel" Width="{Binding Settings.DataPanelWidth}" Margin="10,0,0,0" IsVisible="{Binding HasData}">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+              <Button Classes="seg" Classes.lit="{Binding !ShowJournaline}" Content="Pictures" Command="{Binding ShowPicturesCommand}" IsVisible="{Binding HasSlides}" />
+              <Button Classes="seg" Classes.lit="{Binding ShowJournaline}" Content="News" Command="{Binding ShowNewsCommand}" IsVisible="{Binding HasJournaline}" />
+            </StackPanel>
+            <Panel>
+              <DockPanel IsVisible="{Binding !ShowJournaline}">
+                <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0">
+                  <Button Classes="seg" Content="‹" Command="{Binding SlideBackCommand}" />
+                  <TextBlock Grid.Column="1" Text="{Binding SlideCount}" Classes="label" HorizontalAlignment="Center" />
+                  <Button Grid.Column="2" Classes="seg" Margin="0" Content="›" Command="{Binding SlideForwardCommand}" />
+                </Grid>
+                <Image Name="Slide" Stretch="Uniform" />
+              </DockPanel>
+              <DockPanel IsVisible="{Binding ShowJournaline}">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6" IsVisible="{Binding JournalineCanBack}">
+                  <Button Classes="seg" Content="Back" Command="{Binding JournalineBackCommand}" />
+                  <Button Classes="seg" Content="Top" Command="{Binding JournalineHomeCommand}" />
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding JournalineTitle}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6" />
+                <ScrollViewer>
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding JournalineText}" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding JournalineEntries}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:JournalineEntry">
+                          <Button Classes="seg" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,0,0,3"
+                                  IsEnabled="{Binding Available}" Command="{Binding FollowCommand}">
+                            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </ScrollViewer>
+              </DockPanel>
+            </Panel>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <!-- Listening controls -->
+      <Border Grid.Row="3" Classes="panel">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="AF" Classes="label" Width="22" />
+          <Slider Width="200" Minimum="0" Maximum="100" Value="{Binding Volume}" VerticalAlignment="Center" />
+          <Button Classes="seg" Classes.lit="{Binding IsMuted}" Content="Mute" Command="{Binding ToggleMuteCommand}" />
+          <Button Classes="seg" Classes.lit="{Binding RadioMuted}" Content="Radio Mute" Command="{Binding ToggleRadioMuteCommand}"
+                  IsEnabled="{Binding IsConnected}" ToolTip.Tip="Mute the radio's own speaker audio" />
+          <Button Classes="seg" Classes.lit="{Binding IsRecording}" Content="Rec" Command="{Binding ToggleRecordCommand}"
+                  ToolTip.Tip="Record the decoded audio to a WAV file" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </DockPanel>
+</Window>

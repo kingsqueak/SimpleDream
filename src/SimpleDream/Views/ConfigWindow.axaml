@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleDream.ViewModels"
+        x:Class="SimpleDream.Views.ConfigWindow"
+        x:DataType="vm:ConfigViewModel"
+        Title="Configuration" Width="640" Height="520" MinWidth="520" MinHeight="420">
+  <TabControl Margin="8">
+    <TabItem Header="Connection">
+      <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="8,12" RowSpacing="10">
+        <TextBlock Text="TCI address" Classes="label" FontSize="12" />
+        <TextBox Grid.Column="1" Text="{Binding Host}" />
+        <TextBlock Grid.Row="1" Text="TCI port" Classes="label" FontSize="12" />
+        <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" Width="150" HorizontalAlignment="Left" />
+        <TextBlock Grid.Row="2" Text="Receiver" Classes="label" FontSize="12" />
+        <ComboBox Grid.Row="2" Grid.Column="1" SelectedIndex="{Binding Receiver}" Width="150">
+          <ComboBoxItem Content="1" />
+          <ComboBoxItem Content="2" />
+        </ComboBox>
+        <CheckBox Grid.Row="3" Grid.Column="1" Content="Connect at start" IsChecked="{Binding AutoConnect}" />
+        <Button Grid.Row="4" Grid.Column="1" Classes="flat accent" Content="Connect" Command="{Binding ConnectCommand}" />
+      </Grid>
+    </TabItem>
+    <TabItem Header="Audio">
+      <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto" Margin="8,12" RowSpacing="10">
+        <TextBlock Text="Output" Classes="label" FontSize="12" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding OutputDevices}" SelectedItem="{Binding OutputDevice}" HorizontalAlignment="Stretch" />
+        <TextBlock Grid.Row="1" Text="Recordings" Classes="label" FontSize="12" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RecordDir}" PlaceholderText="Your Music folder" />
+      </Grid>
+    </TabItem>
+    <TabItem Header="Decoder">
+      <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto" Margin="8,12" RowSpacing="10">
+        <TextBlock Text="Mirrored IQ" Classes="label" FontSize="12" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding MirrorChoices}" SelectedItem="{Binding Mirror}" Width="150" />
+        <CheckBox Grid.Row="1" Grid.Column="1" Content="Smooth SBR on stations that switch it on and off" IsChecked="{Binding SmoothSbr}" />
+        <Button Grid.Row="2" Grid.Column="1" Classes="flat" Content="Restart decoder" Command="{Binding RestartCommand}" />
+      </Grid>
+    </TabItem>
+    <TabItem Header="Appearance">
+      <Grid ColumnDefinitions="130,*" Margin="8,12">
+        <TextBlock Text="Theme" Classes="label" FontSize="12" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding ThemeChoices}" SelectedItem="{Binding Theme}" Width="150" />
+      </Grid>
+    </TabItem>
+    <TabItem Header="Details">
+      <Grid RowDefinitions="Auto,*" Margin="4,10">
+        <SelectableTextBlock Text="{Binding Main.DetailsText}" FontFamily="{StaticResource MonoFont}" FontSize="12" />
+        <TextBox Grid.Row="1" Text="{Binding Main.LogText}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                 FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,10,0,0" />
+      </Grid>
+    </TabItem>
+  </TabControl>
+</Window>

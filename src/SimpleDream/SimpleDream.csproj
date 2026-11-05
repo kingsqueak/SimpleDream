@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <Version>0.1.0</Version>
+    <Product>SimpleDream</Product>
+    <NativeDir>$(MSBuildProjectDirectory)/../../native</NativeDir>
+    <NoWarn>$(NoWarn);AVLN3001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.5" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <!-- The Rust bridge to DecDRM, built by cargo and copied next to the app. -->
+  <Target Name="BuildNative" BeforeTargets="BeforeBuild">
+    <Exec Command="cargo build --release --lib" WorkingDirectory="$(NativeDir)" />
+    <PropertyGroup>
+      <NativeLib Condition="$([MSBuild]::IsOSPlatform('OSX'))">libsimpledream_native.dylib</NativeLib>
+      <NativeLib Condition="$([MSBuild]::IsOSPlatform('Linux'))">libsimpledream_native.so</NativeLib>
+      <NativeLib Condition="$([MSBuild]::IsOSPlatform('Windows'))">simpledream_native.dll</NativeLib>
+    </PropertyGroup>
+    <ItemGroup>
+      <None Include="$(NativeDir)/target/release/$(NativeLib)" Link="$(NativeLib)"
+            CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
+</Project>

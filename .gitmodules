@@ -1,0 +1,3 @@
+[submodule "external/DecDRM"]
+	path = external/DecDRM
+	url = https://github.com/CasualArclamp/DecDRM.git

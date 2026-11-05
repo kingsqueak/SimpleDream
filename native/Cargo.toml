@@ -1,0 +1,30 @@
+[package]
+name = "simpledream-native"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+[lib]
+name = "simpledream_native"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+decdrm-engine = { path = "../external/DecDRM/crates/decdrm-engine" }
+decdrm-core = { path = "../external/DecDRM/crates/decdrm-core" }
+decdrm-data = { path = "../external/DecDRM/crates/decdrm-data" }
+decdrm-io = { path = "../external/DecDRM/crates/decdrm-io" }
+decdrm-schedule = { path = "../external/DecDRM/crates/decdrm-schedule" }
+crossbeam-channel = "0.5"
+serde_json = "1"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+debug = "line-tables-only"
+
+[workspace]

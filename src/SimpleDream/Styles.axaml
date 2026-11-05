@@ -1,0 +1,217 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppBg" Color="#0F1115" />
+          <SolidColorBrush x:Key="PanelBg" Color="#171A21" />
+          <SolidColorBrush x:Key="ControlBg" Color="#1F232C" />
+          <SolidColorBrush x:Key="ControlHover" Color="#2A2F3A" />
+          <SolidColorBrush x:Key="TextMain" Color="#E6E8EB" />
+          <SolidColorBrush x:Key="TextMuted" Color="#8A93A3" />
+          <SolidColorBrush x:Key="TxText" Color="#FF6B6B" />
+          <SolidColorBrush x:Key="WarnText" Color="#F2A93B" />
+          <SolidColorBrush x:Key="WarnPanel" Color="#3A2E12" />
+          <SolidColorBrush x:Key="StepDigit" Color="#F9DF83" />
+          <SolidColorBrush x:Key="SquelchMark" Color="#F5C518" />
+          <SolidColorBrush x:Key="MeterTrack" Color="#1F232C" />
+          <SolidColorBrush x:Key="MeterPeak" Color="#E6E8EB" />
+          <SolidColorBrush x:Key="CpuOk" Color="#3DD68C" />
+          <SolidColorBrush x:Key="CpuWarn" Color="#F5C542" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppBg" Color="#EEF0F4" />
+          <SolidColorBrush x:Key="PanelBg" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ControlBg" Color="#E3E6EC" />
+          <SolidColorBrush x:Key="ControlHover" Color="#D5D9E1" />
+          <SolidColorBrush x:Key="TextMain" Color="#1B1F27" />
+          <SolidColorBrush x:Key="TextMuted" Color="#5F6878" />
+          <SolidColorBrush x:Key="TxText" Color="#D92D33" />
+          <SolidColorBrush x:Key="WarnText" Color="#B45309" />
+          <SolidColorBrush x:Key="WarnPanel" Color="#FCEFD0" />
+          <SolidColorBrush x:Key="StepDigit" Color="#4BA3F0" />
+          <SolidColorBrush x:Key="SquelchMark" Color="#4BA3F0" />
+          <SolidColorBrush x:Key="MeterTrack" Color="#E3E6EC" />
+          <SolidColorBrush x:Key="MeterPeak" Color="#1B1F27" />
+          <SolidColorBrush x:Key="CpuOk" Color="#15803D" />
+          <SolidColorBrush x:Key="CpuWarn" Color="#B7791F" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <SolidColorBrush x:Key="Accent" Color="#3B82F6" />
+      <FontFamily x:Key="MonoFont">Menlo, Consolas, DejaVu Sans Mono, monospace</FontFamily>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource AppBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+    <Setter Property="FontFamily" Value="Inter" />
+  </Style>
+
+  <Style Selector="TextBlock.label">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+
+  <!-- Flat segmented buttons -->
+  <Style Selector="ToggleButton.seg">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="MinWidth" Value="38" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ToggleButton.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ControlHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+  <Style Selector="ToggleButton.seg:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <!-- PS: yellow when on but not locked, green when locked, plain grey when off. -->
+  <Style Selector="ToggleButton.seg.ps:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#9A6B12" />
+  </Style>
+  <Style Selector="ToggleButton.seg.ps.locked:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1E7F4F" />
+  </Style>
+
+  <!-- ID timer countdown above the clock: small text you can click. -->
+  <Style Selector="Button.idclock">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.idclock /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+  <Style Selector="Button.idclock:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+  <Style Selector="Button.idclock:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.idclock.on /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+
+  <Style Selector="Button.idclock.mark /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="#2FBF71" />
+  </Style>
+
+  <!-- A plain button in the segmented look, for buttons whose lit state
+       comes from the model rather than from being clicked (e.g. Pre). -->
+  <Style Selector="Button.seg">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="MinWidth" Value="38" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ControlHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+  <Style Selector="Button.seg.lit /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <!-- Transmit buttons go red when keyed; the frequency does too. -->
+  <Style Selector="ToggleButton.tx:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#E5484D" />
+  </Style>
+  <Style Selector="TextBlock.tx">
+    <Setter Property="Foreground" Value="{DynamicResource TxText}" />
+  </Style>
+
+  <!-- Antenna boxes beside the VFO: two stacked to the digits' height -->
+  <Style Selector="Button.ant">
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="MinWidth" Value="80" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <!-- Active slice letter beside the VFO: A red, B amber (matches the panadapter) -->
+  <Style Selector="Border.sliceA"><Setter Property="Background" Value="#F25F5C" /></Style>
+  <Style Selector="Border.sliceB"><Setter Property="Background" Value="#F5A524" /></Style>
+
+  <!-- CPU readout: green below 25%, yellow 25-50%, red above 50% -->
+  <Style Selector="TextBlock.cpu"><Setter Property="Foreground" Value="{DynamicResource CpuOk}" /></Style>
+  <Style Selector="TextBlock.cpu.warn"><Setter Property="Foreground" Value="{DynamicResource CpuWarn}" /></Style>
+  <Style Selector="TextBlock.cpu.bad"><Setter Property="Foreground" Value="#E5484D" /></Style>
+
+  <!-- PureSignal status badge -->
+  <Style Selector="Border.ps">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="7,3" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.ps.ok TextBlock, Border.ps.warn TextBlock, Border.ps.bad TextBlock">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Border.ps.ok"><Setter Property="Background" Value="#1E7F4F" /></Style>
+  <Style Selector="Border.ps.warn"><Setter Property="Background" Value="#9A6B12" /></Style>
+  <Style Selector="Border.ps.bad"><Setter Property="Background" Value="#B23A3E" /></Style>
+
+  <Style Selector="Button.flat">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+  <Style Selector="Button.accent">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Padding" Value="8,4" />
+  </Style>
+
+  <!-- A row of the broadcast list -->
+  <Style Selector="Button.row">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="Margin" Value="0,0,0,1" />
+  </Style>
+  <Style Selector="Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ControlHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+  <Style Selector="TextBlock.on">
+    <Setter Property="Foreground" Value="{DynamicResource CpuOk}" />
+  </Style>
+</Styles>

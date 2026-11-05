@@ -1,0 +1,14 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SimpleDream.App"
+             RequestedThemeVariant="Default">
+  <NativeMenu.Menu>
+    <NativeMenu>
+      <NativeMenuItem Header="About SimpleDream" Click="OnAbout" />
+    </NativeMenu>
+  </NativeMenu.Menu>
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://SimpleDream/Styles.axaml" />
+  </Application.Styles>
+</Application>

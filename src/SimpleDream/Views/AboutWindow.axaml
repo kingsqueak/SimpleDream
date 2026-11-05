@@ -1,0 +1,12 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SimpleDream.Views.AboutWindow"
+        Title="About SimpleDream" Width="420" SizeToContent="Height" CanResize="False">
+  <StackPanel Margin="20" Spacing="8">
+    <TextBlock Name="Heading" FontSize="20" FontWeight="SemiBold" />
+    <TextBlock TextWrapping="Wrap" Text="A simple receiver for Digital Radio Mondiale over TCI." />
+    <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+               Text="Decoding by DecDRM (Rust, GPL-2.0-or-later). Audio by FDK-AAC and Opus. Schedules from EiBi and the DRMDX group." />
+    <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Text="Receive only: it can't key or tune a transmitter." />
+  </StackPanel>
+</Window>
