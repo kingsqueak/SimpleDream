@@ -392,7 +392,8 @@ impl Worker {
                 "db": bins_f64(&visuals.spectrum_db),
                 "span_hz": visuals.spectrum_span_hz,
                 "centre_hz": visuals.spectrum_centre_hz,
-                "band_hz": visuals.signal_band_hz.map(|b| [b.0, b.1]),
+                // While searching this is only a guess, so nothing is marked.
+                "band_hz": visuals.signal_band_hz.filter(|_| st.state != decdrm_core::rx::RxState::Acquisition).map(|b| [b.0, b.1]),
                 "dc_hz": visuals.dc_hz,
             },
             "waterfall": rows,

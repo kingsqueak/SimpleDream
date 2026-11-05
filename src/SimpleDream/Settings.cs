@@ -18,6 +18,10 @@ public sealed class Settings
     public string Theme { get; set; } = "System";
     public string RecordDir { get; set; } = "";
     public double DataPanelWidth { get; set; } = 320;
+    /// <summary>Broadcast list: column to sort by, direction, and language shown ("" for all).</summary>
+    public string BroadcastSort { get; set; } = "Status";
+    public bool BroadcastSortAscending { get; set; } = true;
+    public string BroadcastLanguage { get; set; } = "";
 
     public static string Dir { get; } = MakeDir();
     public static string ScheduleDir { get; } = Directory.CreateDirectory(Path.Combine(Dir, "schedule")).FullName;

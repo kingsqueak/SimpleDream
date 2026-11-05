@@ -12,7 +12,9 @@ namespace SimpleDream.ViewModels;
 public sealed partial class BroadcastsViewModel : ObservableObject
 {
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(3);
-    private const double MatchKhz = 5;
+    /// <summary>DRM channels sit 5 kHz apart, so anything wider names the station next door.</summary>
+    private const double MatchKhz = 1;
+    private const string AllLanguages = "All languages";
 
     private readonly MainViewModel _main;
     private readonly DispatcherTimer _clock;
@@ -20,17 +22,31 @@ public sealed partial class BroadcastsViewModel : ObservableObject
     private double _tunedKhz;
 
     public ObservableCollection<BroadcastItem> Items { get; } = [];
+    public ObservableCollection<string> Languages { get; } = [AllLanguages];
 
     [ObservableProperty] private string _filter = "Now";
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private string _sourceStatus = "";
     [ObservableProperty] private bool _isUpdating;
+    [ObservableProperty] private string _language = AllLanguages;
+    private string _sort;
+    private bool _ascending;
+    private string _shown = "";
 
     public string TimeZoneName => TimeZoneInfo.Local.IsDaylightSavingTime(DateTime.Now) ? TimeZoneInfo.Local.DaylightName : TimeZoneInfo.Local.StandardName;
     public bool FilterNow => Filter == "Now";
     public bool FilterToday => Filter == "Today";
     public bool FilterAll => Filter == "All";
+
+    public string KhzHeader => Header("kHz", "kHz");
+    public string StatusHeader => Header("Status", "Status");
+    public string TimeHeader => Header("Time", "Local time");
+    public string StationHeader => Header("Station", "Station");
+    public string LanguageHeader => Header("Language", "Language");
+
+    private string Header(string column, string title) =>
+        column == _sort ? $"{title} {(_ascending ? "▲" : "▼")}" : title;
 
     /// <summary>The nearest scheduled station on the tuned frequency, on the air now.</summary>
     public string? ScheduledHere { get; private set; }
@@ -38,7 +54,15 @@ public sealed partial class BroadcastsViewModel : ObservableObject
     public BroadcastsViewModel(MainViewModel main)
     {
         _main = main;
+        _sort = main.Settings.BroadcastSort;
+        _ascending = main.Settings.BroadcastSortAscending;
+        var saved = main.Settings.BroadcastLanguage;
         Reload();
+        if (saved != "")
+        {
+            if (!Languages.Contains(saved)) Languages.Add(saved);
+            Language = saved;
+        }
         _clock = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
         _clock.Tick += (_, _) => Reload();
         _clock.Start();
@@ -107,6 +131,29 @@ public sealed partial class BroadcastsViewModel : ObservableObject
 
     partial void OnSearchChanged(string value) => Apply();
 
+    partial void OnLanguageChanged(string value)
+    {
+        // The list being rebuilt clears the selection for a moment.
+        if (string.IsNullOrEmpty(value)) return;
+        _main.Settings.BroadcastLanguage = value == AllLanguages ? "" : value;
+        _main.Settings.Save();
+        Apply();
+    }
+
+    /// <summary>Click a heading to sort by it; click again to reverse.</summary>
+    [RelayCommand]
+    private void Sort(string column)
+    {
+        _ascending = column != _sort || !_ascending;
+        _sort = column;
+        _main.Settings.BroadcastSort = _sort;
+        _main.Settings.BroadcastSortAscending = _ascending;
+        _main.Settings.Save();
+        foreach (var name in new[] { nameof(KhzHeader), nameof(StatusHeader), nameof(TimeHeader), nameof(StationHeader), nameof(LanguageHeader) })
+            OnPropertyChanged(name);
+        Apply();
+    }
+
     public void FrequencyChanged(double khz)
     {
         _tunedKhz = khz;
@@ -129,8 +176,22 @@ public sealed partial class BroadcastsViewModel : ObservableObject
         _all = items;
         var sources = root.GetProperty("sources").EnumerateArray().Select(s => s.GetProperty("name").GetString()).ToList();
         SourceStatus = sources.Count == 0 ? "No schedule downloaded yet." : $"From {string.Join(" and ", sources)}. Schedules can be out of date.";
+        UpdateLanguages();
         Match();
         Apply();
+    }
+
+    /// <summary>Only touches the dropdown when the set of languages changes, so it keeps its selection.</summary>
+    private void UpdateLanguages()
+    {
+        var chosen = Language;
+        var found = _all.Select(b => b.Language.Trim()).Where(l => l != "").Distinct(StringComparer.OrdinalIgnoreCase);
+        if (chosen != AllLanguages) found = found.Append(chosen).Distinct(StringComparer.OrdinalIgnoreCase);
+        var list = found.Order(StringComparer.OrdinalIgnoreCase).Prepend(AllLanguages).ToList();
+        if (list.SequenceEqual(Languages)) return;
+        Languages.Clear();
+        foreach (var l in list) Languages.Add(l);
+        Language = chosen;
     }
 
     private void Match()
@@ -139,10 +200,32 @@ public sealed partial class BroadcastsViewModel : ObservableObject
             .OrderBy(b => Math.Abs(b.Khz - _tunedKhz)).FirstOrDefault()?.Station;
     }
 
+    /// <summary>The chosen order, ties by frequency. Blank text sorts last either way.</summary>
+    private IEnumerable<BroadcastItem> Sorted(IEnumerable<BroadcastItem> rows)
+    {
+        IOrderedEnumerable<BroadcastItem> By<T>(Func<BroadcastItem, T> key) =>
+            _ascending ? rows.OrderBy(key) : rows.OrderByDescending(key);
+        IOrderedEnumerable<BroadcastItem> ByText(Func<BroadcastItem, string> key)
+        {
+            var blankLast = rows.OrderBy(b => key(b).Trim() == "");
+            return _ascending
+                ? blankLast.ThenBy(key, StringComparer.OrdinalIgnoreCase)
+                : blankLast.ThenByDescending(key, StringComparer.OrdinalIgnoreCase);
+        }
+        return (_sort switch
+        {
+            "kHz" => By(b => b.Khz),
+            "Time" => By(b => b.LocalStart),
+            "Station" => ByText(b => b.Station),
+            "Language" => ByText(b => b.Language),
+            _ => By(b => b.StateRank),
+        }).ThenBy(b => b.Khz).ThenBy(b => b.StartUtc);
+    }
+
     private void Apply()
     {
         var q = Search.Trim();
-        var rows = _all.Where(b => Filter switch
+        var found = _all.Where(b => Filter switch
             {
                 "Now" => b.IsOn || b.IsSoon,
                 "Today" => b.Today,
@@ -152,10 +235,16 @@ public sealed partial class BroadcastsViewModel : ObservableObject
                         || b.Language.Contains(q, StringComparison.OrdinalIgnoreCase)
                         || b.Target.Contains(q, StringComparison.OrdinalIgnoreCase)
                         || b.KhzText.Contains(q))
-            .OrderByDescending(b => b.IsOn).ThenByDescending(b => b.IsSoon).ThenBy(b => b.Khz)
-            .ToList();
-        Items.Clear();
-        foreach (var r in rows) Items.Add(r);
+            .Where(b => Language is AllLanguages or "" || b.Language.Trim().Equals(Language, StringComparison.OrdinalIgnoreCase));
+        var rows = Sorted(found).ToList();
+        // The list refreshes against the clock: leave it, and its scroll position, alone if nothing moved.
+        var shown = string.Join("|", rows.Select(b => $"{b.Khz}{b.StartUtc}{b.State}{b.Station}"));
+        if (shown != _shown)
+        {
+            _shown = shown;
+            Items.Clear();
+            foreach (var r in rows) Items.Add(r);
+        }
         Summary = $"{rows.Count(b => b.IsOn)} on now, {_all.Count} listed";
     }
 }

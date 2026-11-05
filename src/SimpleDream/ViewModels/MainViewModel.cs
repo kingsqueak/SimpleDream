@@ -366,12 +366,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         QualityText = total > 0 ? $"{100.0 * mscOk / total:0}% good" : "";
 
         IsPlaying = flowing;
-        IsWeak = locked && !flowing && needs is { } n && (snr ?? 0) < n;
+        var cantPlay = locked ? CantPlay(r) : null;
+        IsWeak = locked && !flowing && cantPlay == null && needs is { } n && (snr ?? 0) < n;
         (StatusText, StatusDetail) = true switch
         {
             _ when !haveIq && !IsConnected && !_replaying => ("Not connected", ConnectionDetail),
             _ when !haveIq => ("Waiting for IQ", "The radio isn't sending IQ"),
             _ when flowing => ("Playing", ""),
+            _ when cantPlay != null => ("Can't play", cantPlay),
             _ when IsWeak => ("Too weak", $"This station needs about {needs:0} dB"),
             _ when locked => ("Locked", "Waiting for audio"),
             _ when state == "Tracking" => ("Syncing", ""),
@@ -399,6 +401,21 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         UpdateSpectrum(r);
         UpdateDetails(r, state);
+    }
+
+    /// <summary>Why the selected service can't be heard, however good the signal; null if it can.</summary>
+    private static string? CantPlay(JsonElement r)
+    {
+        var selected = (int)(Num(r, "selected") ?? -1);
+        foreach (var s in r.GetProperty("services").EnumerateArray())
+        {
+            if ((int)Int(s, "id") != selected) continue;
+            if (s.GetProperty("encrypted").GetBoolean()) return "This station is encrypted";
+            if (s.GetProperty("decodable").GetBoolean()) return null;
+            var codec = Str(s, "codec")?.Split(' ')[0] ?? "This";
+            return Str(s, "warning") is { } why ? $"{codec} audio, {why}" : $"{codec} audio isn't supported";
+        }
+        return null;
     }
 
     private void UpdateServices(JsonElement r)

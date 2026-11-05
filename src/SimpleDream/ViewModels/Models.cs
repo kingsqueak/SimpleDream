@@ -37,6 +37,10 @@ public sealed partial class BroadcastItem(double khz, int startUtc, int stopUtc,
     public string Source { get; } = source;
     public bool Today { get; } = today;
 
+    /// <summary>Sort position of the status: on the air first, then starting soon.</summary>
+    public int StateRank => State switch { "on" => 0, "ending" => 1, "soon" => 2, _ => 3 };
+    /// <summary>Start in the viewer's time zone, minutes after local midnight.</summary>
+    public int LocalStart => (int)DateTime.UtcNow.Date.AddMinutes(StartUtc).ToLocalTime().TimeOfDay.TotalMinutes;
     public bool IsOn => State is "on" or "ending";
     public bool IsSoon => State == "soon";
     public string KhzText => Khz == Math.Floor(Khz) ? Khz.ToString("0") : Khz.ToString("0.###");
