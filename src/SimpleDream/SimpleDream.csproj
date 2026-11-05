@@ -9,6 +9,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <Version>0.1.0</Version>
     <Product>SimpleDream</Product>
+    <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
     <NativeDir>$(MSBuildProjectDirectory)/../../native</NativeDir>
     <NoWarn>$(NoWarn);AVLN3001</NoWarn>
   </PropertyGroup>
@@ -19,6 +20,11 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.5" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The IQ stream wakes thread-pool threads constantly; don't let them spin between packets. -->
+    <RuntimeHostConfigurationOption Include="System.Threading.ThreadPool.UnfairSemaphoreSpinLimit" Value="0" />
   </ItemGroup>
 
   <ItemGroup>

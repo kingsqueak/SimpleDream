@@ -29,7 +29,12 @@ public sealed class TciClient : IDisposable
     private readonly Task _loop;
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private ClientWebSocket? _ws;
-    private float[] _floats = new float[8192];
+    /// <summary>IQ waiting to go to the decoder. TCI packets are tiny (about 1600 a second
+    /// at 384 kHz); handing them over 25 times a second saves most of the thread wake-ups.</summary>
+    private float[] _floats = new float[1 << 16];
+    private int _pending;
+    private int _pendingRate;
+    private const int BatchesPerSecond = 25;
 
     public event Action? Changed;
     public event IqHandler? IqReceived;
@@ -147,8 +152,14 @@ public sealed class TciClient : IDisposable
         };
         count &= ~1;
         if (count == 0) return;
-        if (_floats.Length < count) _floats = new float[count * 2];
-        var dest = _floats.AsSpan(0, count);
+        if (rate != _pendingRate)
+        {
+            _pending = 0;
+            _pendingRate = rate;
+        }
+        var batch = Math.Max(rate / BatchesPerSecond * 2, count);
+        if (_floats.Length < batch + count) Array.Resize(ref _floats, (batch + count) * 2);
+        var dest = _floats.AsSpan(_pending, count);
         switch (format)
         {
             case Float32Format:
@@ -166,7 +177,10 @@ public sealed class TciClient : IDisposable
                 break;
         }
         LastIq = DateTime.UtcNow;
-        IqReceived?.Invoke(dest, rate);
+        _pending += count;
+        if (_pending < batch) return;
+        IqReceived?.Invoke(_floats.AsSpan(0, _pending), rate);
+        _pending = 0;
     }
 
     private async Task SendAsync(string command)

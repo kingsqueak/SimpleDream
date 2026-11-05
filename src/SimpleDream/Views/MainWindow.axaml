@@ -4,6 +4,7 @@
         xmlns:c="using:SimpleDream.Controls"
         x:Class="SimpleDream.Views.MainWindow"
         x:DataType="vm:MainViewModel"
+        Icon="avares://SimpleDream/Assets/icon.png"
         Title="SimpleDream" Width="1000" Height="680" MinWidth="760" MinHeight="520">
 
   <Window.Styles>
@@ -70,7 +71,8 @@
       <Border Grid.Row="1" Classes="panel" Margin="0,0,0,10" Padding="14,10">
         <StackPanel Spacing="3">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding Station}" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MinHeight="30" />
+            <TextBlock Text="{Binding Station}" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                       IsVisible="{Binding Station, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <ItemsControl Grid.Column="1" ItemsSource="{Binding Services}" IsVisible="{Binding HasManyServices}" VerticalAlignment="Center">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>

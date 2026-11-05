@@ -1,11 +1,11 @@
 //! Digital down-converter: takes TCI IQ at any integer multiple of 48 kHz, mirrors it if
 //! needed, moves the wanted channel to 0 Hz and decimates to the decoder's 48 kHz.
 
-/// Half-width of the passband, Hz. DRM's widest channel is 20 kHz.
-const CUTOFF_HZ: f64 = 14_000.0;
+/// Where the sharp filter is 6 dB down, Hz. DRM's widest channel is 20 kHz.
+const FINE_CUTOFF_HZ: f64 = 18_200.0;
 
-pub struct Ddc {
-    rate: u32,
+/// One decimating FIR over complex samples.
+struct Fir {
     decim: usize,
     taps: Vec<f32>,
     /// Double-length delay lines, so the filter always reads a contiguous slice.
@@ -13,6 +13,39 @@ pub struct Ddc {
     im: Vec<f32>,
     pos: usize,
     count: usize,
+}
+
+impl Fir {
+    fn new(decim: usize, taps: Vec<f32>) -> Fir {
+        let n = taps.len();
+        Fir { decim, taps, re: vec![0.0; 2 * n], im: vec![0.0; 2 * n], pos: 0, count: 0 }
+    }
+
+    #[inline]
+    fn push(&mut self, i: f32, q: f32) -> Option<(f32, f32)> {
+        let n = self.taps.len();
+        self.re[self.pos] = i;
+        self.re[self.pos + n] = i;
+        self.im[self.pos] = q;
+        self.im[self.pos + n] = q;
+        self.pos = (self.pos + 1) % n;
+        self.count += 1;
+        if self.count < self.decim {
+            return None;
+        }
+        self.count = 0;
+        let (r, m) = (&self.re[self.pos..self.pos + n], &self.im[self.pos..self.pos + n]);
+        Some((dot(&self.taps, r), dot(&self.taps, m)))
+    }
+}
+
+pub struct Ddc {
+    rate: u32,
+    /// A short filter down to 96 kHz, then the sharp one down to 48 kHz: at 384 kHz this
+    /// is about a third of the arithmetic of one filter doing it all. Rates of 96 kHz
+    /// and below have only the second.
+    coarse: Option<Fir>,
+    fine: Fir,
     osc: (f64, f64),
     step: (f64, f64),
     shift_hz: f64,
@@ -26,21 +59,15 @@ impl Ddc {
             return None;
         }
         let decim = (rate / 48_000) as usize;
-        let taps = design(rate, decim);
-        let n = taps.len();
-        Some(Ddc {
-            rate,
-            decim,
-            taps,
-            re: vec![0.0; 2 * n],
-            im: vec![0.0; 2 * n],
-            pos: 0,
-            count: 0,
-            osc: (1.0, 0.0),
-            step: (1.0, 0.0),
-            shift_hz: 0.0,
-            renorm: 0,
-        })
+        let (coarse, fine) = if decim >= 4 && decim.is_multiple_of(2) {
+            let first = decim / 2;
+            // Everything that would fold into the channel lies above 72 kHz.
+            (Some(Fir::new(first, design(rate, 12 * first + 1, 48_000.0))), Fir::new(2, design(96_000, 129, FINE_CUTOFF_HZ)))
+        } else {
+            let len = if decim == 1 { 1 } else { 64 * decim + 1 };
+            (None, Fir::new(decim, design(rate, len, FINE_CUTOFF_HZ)))
+        };
+        Some(Ddc { rate, coarse, fine, osc: (1.0, 0.0), step: (1.0, 0.0), shift_hz: 0.0, renorm: 0 })
     }
 
     pub fn rate(&self) -> u32 {
@@ -55,7 +82,6 @@ impl Ddc {
             let w = -2.0 * std::f64::consts::PI * shift_hz / f64::from(self.rate);
             self.step = (w.cos(), w.sin());
         }
-        let n = self.taps.len();
         let sign = if mirror { -1.0f64 } else { 1.0 };
         for s in iq.chunks_exact(2) {
             let (i, q) = (f64::from(s[0]), sign * f64::from(s[1]));
@@ -67,17 +93,15 @@ impl Ddc {
                 let m = (self.osc.0 * self.osc.0 + self.osc.1 * self.osc.1).sqrt();
                 self.osc = (self.osc.0 / m, self.osc.1 / m);
             }
-            self.re[self.pos] = a as f32;
-            self.re[self.pos + n] = a as f32;
-            self.im[self.pos] = b as f32;
-            self.im[self.pos + n] = b as f32;
-            self.pos = (self.pos + 1) % n;
-            self.count += 1;
-            if self.count == self.decim {
-                self.count = 0;
-                let (r, m) = (&self.re[self.pos..self.pos + n], &self.im[self.pos..self.pos + n]);
-                out.push(dot(&self.taps, r));
-                out.push(dot(&self.taps, m));
+            let sample = match self.coarse.as_mut() {
+                Some(f) => f.push(a as f32, b as f32),
+                None => Some((a as f32, b as f32)),
+            };
+            if let Some((x, y)) = sample
+                && let Some((p, r)) = self.fine.push(x, y)
+            {
+                out.push(p);
+                out.push(r);
             }
         }
     }
@@ -88,12 +112,11 @@ fn dot(a: &[f32], b: &[f32]) -> f32 {
 }
 
 /// Kaiser-windowed low-pass with unity DC gain.
-fn design(rate: u32, decim: usize) -> Vec<f32> {
-    if decim == 1 {
+fn design(rate: u32, len: usize, cutoff_hz: f64) -> Vec<f32> {
+    if len == 1 {
         return vec![1.0];
     }
-    let len = 64 * decim + 1;
-    let fc = CUTOFF_HZ * 1.3 / f64::from(rate);
+    let fc = cutoff_hz / f64::from(rate);
     let beta = 9.0;
     let mid = (len - 1) as f64 / 2.0;
     let mut h: Vec<f64> = (0..len)
@@ -175,6 +198,17 @@ mod tests {
         d.process(&tone(384_000, 10_000.0, 96_000), 0.0, false, &mut out);
         let got = rms(&out[out.len() / 2..]) * std::f32::consts::SQRT_2;
         assert!((got - 1.0).abs() < 0.03, "gain {got}");
+    }
+
+    #[test]
+    fn rejects_what_would_fold_into_the_channel() {
+        for (rate, hz) in [(384_000, 90_000.0), (192_000, 85_000.0), (96_000, 40_000.0), (768_000, 91_000.0)] {
+            let mut d = Ddc::new(rate).unwrap();
+            let mut out = Vec::new();
+            d.process(&tone(rate, hz, rate as usize / 2), 0.0, false, &mut out);
+            let level = rms(&out[out.len() / 2..]);
+            assert!(level < 1e-3, "{rate} Hz, tone at {hz}: rms {level}");
+        }
     }
 
     #[test]
