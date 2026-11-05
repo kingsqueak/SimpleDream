@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using SimpleDream.Controls;
 using SimpleDream.ViewModels;
 
 namespace SimpleDream.Views;
@@ -77,12 +78,13 @@ public partial class MainWindow : Window
 
     private void OnFrequencyWheel(object? sender, PointerWheelEventArgs e)
     {
-        _wheel += e.Delta.Y;
-        var steps = (int)_wheel;
+        // One wheel click is 0.2 on macOS and 1.0 elsewhere; trackpads send fractions.
+        _wheel += SliderWheel.Amount(e) / SliderWheel.ClickDelta;
+        e.Handled = true;
+        var steps = (int)Math.Truncate(_wheel + Math.CopySign(1e-6, _wheel));
         if (steps == 0) return;
         _wheel -= steps;
         Vm.TuneSteps(steps);
-        e.Handled = true;
     }
 
     private void OnFrequencyPressed(object? sender, PointerPressedEventArgs e)
