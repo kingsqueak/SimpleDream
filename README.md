@@ -24,7 +24,8 @@ setting the receive frequency and muting the radio's audio.
 You need the .NET 10 SDK and Rust 1.88 or later, plus a C/C++ compiler and CMake.
 
 ```sh
-git clone --recursive <repo>
+git clone --recursive https://github.com/kingsqueak/SimpleDream.git
+cd SimpleDream
 dotnet run --project src/SimpleDream
 ```
 
